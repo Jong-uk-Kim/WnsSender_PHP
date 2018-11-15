@@ -1,66 +1,86 @@
 <?php
 include "define_interface.php";
 
-class TestController  implements IController {
+class TestController implements IController{
     protected $baseRoute="test";
     protected $HttpContext = null;
 
-    function __construct(){
-        $HttpContext = new HttpContext($_SERVER);
-    }   
+    function __construct($url){
+        $this->HttpContext = new HttpContext($url);
+    }
 
-    function Execuate()
+    function Execute()
     {
-        $jsonTest = Array([test]=>"test");
-        $HttpContext->$Response.SendResponse(200, $jsonTest);
+        try
+        {
+            // Execute api process
+
+            // setting up response
+
+            // execute send response on the HttpResponse::sendresponse function
+            return $this->HttpContext->Response->SendResponse(200, "test", array('test'=>'test'));
+        }
+        catch (Exception $e)
+        {
+            return $this->HttpContext->Response->SendResponse(500, "catched unknown error");
+        }
+    }
+
+    function RegisterChannel()
+    {
+
     }
 }
 
-class ErrorController
+class ErrorController implements IController
 {
     protected $HttpContext = null;
-    function SendError()
+    function __construct()
     {
-        $HttpContext = new HttpContext();
-        return $HttpContext->$Response.SendResponse("404", "page not found", "");
+        $this->HttpContext = new HttpContext("null");
+    }
+
+    function Execute()
+    {
+        return $this->HttpContext->Response->SendResponse("404", "page not found");
     }
 }
 
 function InjectService(){
 
-        $rootPath = explode("/", $_SERVER["PATH_INFO"], 0);
-		$rootPath = substr($_SERVER["PATH_INFO"], 1);
-        echo($rootPath);
+    try{
+            $absolutePath = substr($_SERVER["PATH_INFO"], 1);
+            $rootPath = explode("/", $absolutePath);
+            $subUrl = substr($absolutePath, strlen($rootPath[0]));
 
-        try{
-            $controlName = $rootPath+"Controller";
-            echo($controlName);
+            echo $absolutePath;
+            echo $rootPath[0];
+            echo $subUrl;
 
-            switch($controlName)
+            $controller = null;
+            switch($rootPath[0])
             {
-                case "TestController":
-                $controller = new TestController();
-                $controller.Execuate();
+                case "Test":
+                    $controller = new TestController($subUrl);
                 break;
+
+                case "Test2":
+                    
+                break;
+                
+                default:
+                $controller = new ErrorController();
+                break;
+
             }
+
+            echo $controller->Execute();
         }
         catch(Exception $e)
         {
-
+            
         }
     }
+
+    InjectService();
 ?>
-<<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Page Title</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
-    <script src="main.js"></script>
-</head>
-<body>
- <?php InjectService();?>
-</body>
-</html>

@@ -1,88 +1,96 @@
 <?php
 // defines
 interface IController{
-    function Execuate();
+    function Execute();
 }
 
 interface IHttpRequest{
-    function SetParams(string $url, object $request, string $method="");
+    function SetParams($url, $method, $params);
+    function ParseBody($key);
+    function GetMethodType();
+    function GetRequestUrl();
+    function GetHeaders();
+    function IsValidParameter();
 }
 interface IHttpResponse{
-    function SendResponse(int $code, string $description, string $message);
+    function SendResponse(int $code, string $description, Array $message);
 }
 
-abstract class AHttpRequest implements IHttpRequest{
-    protected $Message="";
-    protected $Body="";
+abstract class AHttpRequest{
     protected $Headers=array();
     protected $Method="";
     protected $Url="";
-
-    abstract protected function ParseBody();
-    abstract protected function IsValidParameter();
+    protected $Params=array();
 }
 
-abstract class AHttpResponse implements IHttpResponse{
-    protected $Headers=array();
-    protected $ResposeCode = -1;
-    protected $ResponseDescripsion ="";
+abstract class AHttpResponse {
+    public $Headers=array();
+    public $ResposeCode = -1;
+    public $ResponseDescripsion ="";
 }
 
-class HttpRequest extends AHttpRequest{
-    public function SetParams(string $url, object $request, string $method="")
+class HttpRequest extends AHttpRequest implements IHttpRequest{
+    function SetParams($url, $method, $params)
     {
-        $this->$Url = $url;
-
-        if(method === ""){
-            throw new Exception();
-        }
-
-        $this->$Method = $method;
-        switch($this->$Method)        
-        {
-            case "POST":
-            break;
-            case "GET":
-            break;
-        }
+        $this->Url = $url;
+        $this->Method = $method;
+        $this->Params=$params;
     }
 
-    function ParseBody(){
-        return "testParseBody";
+    function ParseBody($key){
+        return $this->Params[$key];
     }
 
     function IsValidParameter()
     {
         return "testIsValidParameter";
     }
+
+    function GetMethodType(){
+        return $this->Method;
+    }
+
+    function GetRequestUrl(){
+        return $this->Url;
+    }
+
+    function GetHeaders(){
+        return $this->Headers;
+    }
 }
 
-class HttpResponse extends AHttpResponse{
-    function SendResponse(int $code, string $description, string $message){
+class HttpResponse extends AHttpResponse implements IHttpResponse{
+    function SendResponse(int $code, string $description, Array $message = null){
         http_response_code($code);
         header("Content-Type: application/json");
+        
+        if (!$message){
+            return null;
+        }
         return json_encode($message);
     }
 }
 
 class HttpContext {
-    public $Request = null;
-    public $Response = null;
+    public $Request;
+    public $Response;
 
-    function __construct(object $globalServer)
+    function __construct(string $url)
     {
-        $Request = new HttpRequest();
-        $Response = new HttpResponse();    
+        $request = new HttpRequest();
+        $response = new HttpResponse();  
 
-        if ($globalServer["REQUEST_METHOD"] === "GET")
+        if ($_SERVER["REQUEST_METHOD"] === "GET")
         {
-            echo($_REQUEST->$_GET);
-            $globalServer.SetParams(explode("/", substr($globalServer["PATH_INFO"], 1)), $_REQUEST->$_GET, "GET");
+            $request->SetParams($url, "GET", $_GET);
         }
-        elseif($globalServer["REQUEST_METHOD"] === "POST")
+        elseif($_SERVER["REQUEST_METHOD"] === "POST")
         {
-            $globalServer.SetParams(explode("/", substr($globalServer["PATH_INFO"], 1)), $_REQUEST->$_POST, "POST");
+            $request->SetParams($url, "POST", $_POST);
         }
+
+        $this->Request = $request;
+        $this->Response = $response;
     }
 }
 ?>
