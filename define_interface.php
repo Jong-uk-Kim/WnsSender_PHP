@@ -20,7 +20,7 @@ abstract class AHttpRequest{
     protected $Headers=array();
     protected $Method="";
     protected $Url="";
-    protected $Params=array();
+    protected $Params;
 }
 
 abstract class AHttpResponse {
@@ -38,7 +38,10 @@ class HttpRequest extends AHttpRequest implements IHttpRequest{
     }
 
     function ParseBody($key){
-        return $this->Params[$key];
+        if (array_key_exists($key, $this->Params)){
+            return $this->Params[$key];
+        }
+        return null;
     }
 
     function IsValidParameter()
@@ -60,12 +63,12 @@ class HttpRequest extends AHttpRequest implements IHttpRequest{
 }
 
 class HttpResponse extends AHttpResponse implements IHttpResponse{
-    function SendResponse(int $code, string $description, Array $message = null){
+    function SendResponse(int $code, string $description, Array $message = null): string{
         http_response_code($code);
         header("Content-Type: application/json");
         
         if (!$message){
-            return null;
+            return "";
         }
         return json_encode($message);
     }
